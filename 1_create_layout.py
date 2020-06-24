@@ -1,6 +1,9 @@
+import os
 import tkinter.ttk as ttk
+import tkinter.messagebox as msgbox
 from tkinter import *
 from tkinter import filedialog
+from PIL import Image
 root = Tk()
 root.title("Nado GUI")
 
@@ -8,12 +11,59 @@ root.title("Nado GUI")
 def add_file():
     files = filedialog.askopenfilenames(title="이미지 파일을 선택하세요", \
                                         filetypes=(("PNG 파일","*.png"),("모든 파일", "*.*")), \
-                                        initialdir=r"C:/") #최초경로
+                                        initialdir=r"C:\Users\Caleb\PycharmProjects\gui_pic_project") #최초경로
     for file in files:
        list_file.insert(END,file)
 #파일 삭제
 def del_file():
-    pass
+    #print(list_file.curselection())
+    for index in (list_file.curselection()): #거꾸로
+        list_file.delete(index)
+
+#저장 경로(폴더)
+def browse_dest_path():
+    folder_selected = filedialog.askdirectory()
+    if folder_selected is None:
+        return
+    txt_dext_path.delete(0,END)
+    txt_dext_path.insert(0,folder_selected)
+
+#이미지 통합
+def merge_image():
+    #print(list_file.get(0,END))#모든 파일 목록가져오기
+    images = [Image.open(x) for x in list_file.get(0,END)]
+    #size ->size[0]: width, size[1]:height
+    widths = [x.size[0] for x in images]
+    height = [x.size[1] for x in images]
+    max_width, total_height = max(widths), sum(height)
+
+    #스케치북 준비
+    result_img = Image.new("RGB", (max_width, total_height),(255,255,255)) #배겨흰색
+    y_offset = 0 #y위치정보
+    for img in images:
+        result_img.paste(img,(0, y_offset))  #붙여넣기
+        y_offset += img.size[1] #height 값 만큼 더해줌
+    dest_path = os.path.join(txt_dext_path.get(), "nado.jpg")
+    result_img.save(dest_path)
+    msgbox.showinfo("알림", "작업이 완료 되었습니다.")
+#시작
+def start():
+    #각 옵션들 값을 확인
+    print("가로넓이 : ", cmb_width.get())
+    print("간격 : ", cmb_space.get())
+    print("포맷 : ", cmb_format.get())
+
+    #파일 목록 확인
+    if list_file.size() == 0:
+        msgbox.showwarning("경고", "이미지를 추가해 주세요")
+        return
+
+    #저장 경로 확인
+    if len(txt_dext_path.get()) ==0:
+        msgbox.showwarning("경고", "저장경로를 선택하세요")
+        return
+    #이미지 통합작업
+    merge_image()
 
 #파일 프레이(파일 추가, 선택 삭제)
 file_frame = Frame(root)
@@ -37,7 +87,7 @@ path_frame = LabelFrame(root, text="저장경로")
 path_frame.pack(fill="x", padx=5, pady=5, ipady=5)
 txt_dext_path = Entry(path_frame) #한줄은 Entry
 txt_dext_path.pack(side="left", fill="x", expand=True, padx=5, pady=5, ipady=4) #높이 변경
-btn_dest_path = Button(path_frame, text="찾아보기", width=10)
+btn_dest_path = Button(path_frame, text="찾아보기", width=10, command=browse_dest_path)
 btn_dest_path.pack(side="right", padx=5, pady=5)
 
 #옵션프레임
@@ -60,6 +110,7 @@ lbl_space.pack(side="left", padx=5, pady=5)
 # -간격 옵션 콤보
 opt_space = ["없음", "좁게", "보통", "넓게"]
 cmb_space = ttk.Combobox(frame_option, state="readonly", values = opt_space, width=10)
+cmb_space.current(0)
 cmb_space.pack(side="left", padx=5, pady=5)
 
 # 3.파일 포멧 옵션
@@ -69,6 +120,7 @@ lbl_format.pack(side="left", padx=5, pady=5)
 # -파일 포멧 콤보
 opt_format = ["PNG", "JPG", "BMP"]
 cmb_format = ttk.Combobox(frame_option, state="readonly", values = opt_format, width=10)
+cmb_format.current(0)
 cmb_format.pack(side="left", padx=5, pady=5)
 
 # 진행 상황 Progress Bar
@@ -83,7 +135,7 @@ frame_run = Frame(root)
 frame_run.pack(fill="x", padx=5, pady=5)
 btn_close = Button(frame_run, padx=5, pady=5, text="닫기", width=12, command=root.quit)
 btn_close.pack(side="right", padx=5, pady=5)
-btn_start = Button(frame_run, padx=5, pady=5, text="시작", width=12)
+btn_start = Button(frame_run, padx=5, pady=5, text="시작", width=12, command=start)
 btn_start.pack(side="right", padx=5, pady=5)
 
 
